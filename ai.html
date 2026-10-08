@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什麼？AI 暖心美食指南</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Noto Sans TC & Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warmBg: '#FFFDF9',
+                        warmCard: '#FFFFFF',
+                        warmPrimary: '#F97316',
+                        warmSecondary: '#FB923C',
+                        warmAccent: '#FEF08A',
+                        warmSoft: '#FFEDD5',
+                        warmText: '#431407',
+                        warmMuted: '#78350F',
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        rounded: ['Fredoka', '"Noto Sans TC"', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-4px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FAF5EF;
+            background-image: radial-gradient(#FDBA74 0.75px, transparent 0.75px), radial-gradient(#FDBA74 0.75px, #FAF5EF 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            color: #431407;
+            font-family: 'Noto Sans TC', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.12), 0 4px 12px -2px rgba(120, 53, 15, 0.05);
+        }
+
+        .btn-hover-effect {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -4px rgba(249, 115, 22, 0.3);
+        }
+        .btn-hover-effect:active {
+            transform: translateY(1px);
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover {
+            border-color: #F97316;
+            background-color: #FFF7ED;
+            transform: scale(1.01);
+        }
+
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .steam-animation {
+            position: relative;
+        }
+        .steam-animation::before {
+            content: '♨️';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            animation: float 2.5s infinite ease-in-out;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="items-center justify-between p-4 md:p-8">
+
+    <!-- Top Header Navigation -->
+    <header class="w-full max-w-xl flex items-center justify-between py-3 mb-4">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="resetApp()">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white text-xl shadow-md">
+                <i class="fa-solid font-bold fa-utensils"></i>
+            </div>
+            <div>
+                <h1 class="font-rounded font-bold text-lg text-amber-950 tracking-wide">暖心美食夥伴</h1>
+                <p class="text-xs text-amber-700/80 font-medium">AI 今天吃什麼？</p>
+            </div>
+        </div>
+        <div id="badge-status" class="hidden px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-200/80 items-center gap-1.5 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span>AI 線上分析中</span>
+        </div>
+    </header>
+
+    <!-- Main Interactive Container -->
+    <main class="w-full max-w-xl flex-1 flex flex-col justify-center my-auto">
+        
+        <!-- ================= PAGE 1: LANDING ================= -->
+        <div id="screen-landing" class="card-shadow bg-white rounded-3xl p-6 md:p-10 border border-orange-100/80 text-center relative overflow-hidden transition-all duration-500">
+            <!-- Decorative background elements -->
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-orange-100 rounded-full blur-2xl opacity-60"></div>
+            <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-amber-100 rounded-full blur-2xl opacity-60"></div>
+            
+            <div class="relative z-10 flex flex-col items-center">
+                <div class="w-24 h-24 mb-6 rounded-3xl bg-amber-50 border-2 border-orange-200 flex items-center justify-center text-5xl shadow-inner animate-float">
+                    🍳
+                </div>
+
+                <span class="px-3.5 py-1.5 bg-orange-100 text-orange-800 font-semibold text-xs rounded-full mb-3 tracking-wide">
+                    ✨ 專治「選擇困難症」
+                </span>
+
+                <h2 class="text-2xl md:text-3xl font-bold text-amber-950 mb-3 leading-snug">
+                    今天吃什麼？<br><span class="text-orange-600">讓 AI 暖心陪伴</span> 你的每一餐
+                </h2>
+
+                <p class="text-amber-800/80 text-sm md:text-base mb-8 max-w-md leading-relaxed">
+                    工作辛苦了、生活太忙碌？不需要花時間糾結。<br>
+                    只需 30 秒回答 3 個輕鬆小問題，AI 美食夥伴為你調配今日最溫柔療癒的美味菜單！
+                </p>
+
+                <button onclick="startQuiz()" class="w-full py-4 px-8 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-lg rounded-2xl shadow-lg btn-hover-effect flex items-center justify-center gap-3">
+                    <span>開始靈魂選餐</span>
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                </button>
+
+                <div class="mt-6 flex items-center gap-4 text-xs text-amber-700/60 font-medium">
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-heart text-rose-400"></i> 100% 溫柔包容</span>
+                    <span>•</span>
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-bolt text-amber-400"></i> 快速分析</span>
+                    <span>•</span>
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-location-dot text-emerald-400"></i> 結合 Google 地圖</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 2: QUIZ ================= -->
+        <div id="screen-quiz" class="hidden card-shadow bg-white rounded-3xl p-6 md:p-8 border border-orange-100/80 transition-all duration-300">
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center text-xs font-semibold text-amber-800/70 mb-2">
+                    <span id="quiz-progress-text">問題 1 / 3</span>
+                    <span id="quiz-progress-percent">33%</span>
+                </div>
+                <div class="w-full bg-orange-100 h-2.5 rounded-full overflow-hidden">
+                    <div id="quiz-progress-bar" class="bg-gradient-to-r from-orange-400 to-amber-500 h-full rounded-full transition-all duration-300" style="width: 33%"></div>
+                </div>
+            </div>
+
+            <!-- Quiz Card Container -->
+            <div id="quiz-content" class="fade-enter-active">
+                <div id="quiz-icon" class="text-4xl mb-2 text-center"></div>
+                <h3 id="quiz-question" class="text-xl font-bold text-amber-950 mb-6 text-center leading-relaxed"></h3>
+                
+                <div id="quiz-options" class="space-y-3 mb-6">
+                    <!-- Options inserted via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="flex justify-between items-center pt-2 border-t border-orange-100/60">
+                <button id="quiz-prev-btn" onclick="prevQuestion()" class="text-xs text-amber-800/70 hover:text-amber-900 font-semibold flex items-center gap-1 py-2 px-3 rounded-lg hover:bg-orange-50">
+                    <i class="fa-solid fa-chevron-left"></i> 上一題
+                </button>
+                <span class="text-xs text-amber-600/70">直覺點選即可 ✨</span>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 3: LOADING ================= -->
+        <div id="screen-loading" class="hidden card-shadow bg-white rounded-3xl p-10 border border-orange-100/80 text-center my-auto flex flex-col items-center justify-center">
+            <div class="relative w-28 h-28 mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-4 border-orange-100 border-t-orange-500 animate-spin"></div>
+                <div class="text-5xl animate-bounce-gentle">🍲</div>
+            </div>
+            
+            <h3 class="text-xl font-bold text-amber-950 mb-2">AI 正在用心為你挑選...</h3>
+            <p id="loading-subtext" class="text-amber-800/80 text-sm font-medium animate-pulse-slow">
+                正在計算今日份的幸福感數據...
+            </p>
+
+            <div class="mt-8 flex gap-1.5 justify-center">
+                <span class="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 0s;"></span>
+                <span class="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></span>
+                <span class="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 0.4s;"></span>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 4: RESULT / RECOMMENDATION ================= -->
+        <div id="screen-result" class="hidden card-shadow bg-white rounded-3xl p-6 md:p-8 border border-orange-100/80 relative overflow-hidden transition-all duration-300">
+            <!-- Header Badge -->
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-orange-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">✨</span>
+                    <span class="font-bold text-amber-950 text-sm md:text-base">AI 美食導師的客製推薦</span>
+                </div>
+                <span id="result-tag" class="px-3 py-1 bg-amber-100 text-amber-900 font-bold text-xs rounded-full">
+                    第 1 順位首選
+                </span>
+            </div>
+
+            <!-- Food Card Content -->
+            <div class="bg-gradient-to-b from-orange-50/80 to-amber-50/30 rounded-2xl p-5 border border-orange-100 mb-6 relative">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                        <div id="food-category" class="text-xs font-semibold text-orange-600 mb-1"></div>
+                        <h3 id="food-title" class="text-2xl font-bold text-amber-950 leading-tight"></h3>
+                    </div>
+                    <div id="food-emoji" class="text-4xl p-2 bg-white rounded-2xl shadow-sm border border-orange-100">
+                        🍜
+                    </div>
+                </div>
+
+                <!-- Warm AI Commentary Box -->
+                <div class="bg-white/90 rounded-xl p-4 my-3 border border-orange-200/60 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2 text-xs font-bold text-orange-800">
+                        <i class="fa-solid fa-comment-dots text-orange-500"></i>
+                        <span>暖心夥伴的話：</span>
+                    </div>
+                    <p id="food-comment" class="text-amber-950 text-sm leading-relaxed italic">
+                        「辛苦了一整天，今晚就讓熱騰騰的湯頭好好抱抱你的胃吧！過得開心最重要～」
+                    </p>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-2 mt-3 pt-2 text-xs">
+                    <div class="bg-white/70 p-2.5 rounded-lg border border-orange-100/80 flex items-center justify-between">
+                        <span class="text-amber-800/70 font-medium">幸福療癒指數</span>
+                        <span id="food-heart-rating" class="text-rose-500 font-bold"></span>
+                    </div>
+                    <div class="bg-white/70 p-2.5 rounded-lg border border-orange-100/80 flex items-center justify-between">
+                        <span class="text-amber-800/70 font-medium">熱量罪惡度</span>
+                        <span id="food-guilt-rating" class="text-amber-700 font-bold"></span>
+                    </div>
+                </div>
+
+                <!-- Fun Easter Egg Note -->
+                <div id="food-bonus-note" class="mt-3 text-xs text-amber-800/80 flex items-center gap-2 bg-amber-100/50 p-2 rounded-lg">
+                    <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                    <span id="food-bonus-text">換算運動：散步 30 分鐘，但快樂與撫慰無價！</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons for Decision -->
+            <div id="result-actions" class="space-y-3">
+                <button onclick="acceptRecommendation()" class="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base rounded-xl shadow-md btn-hover-effect flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>太棒了，今晚就吃這個！</span>
+                </button>
+
+                <button onclick="rejectRecommendation()" class="w-full py-3 px-6 bg-white hover:bg-orange-50 text-amber-900 border-2 border-orange-200 font-semibold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right text-orange-500"></i>
+                    <span id="retry-btn-text">有點猶豫，換個口味</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 5: FINAL CONFIRMED ================= -->
+        <div id="screen-final" class="hidden card-shadow bg-white rounded-3xl p-6 md:p-8 border border-orange-100/80 text-center">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
+                🎉
+            </div>
+            
+            <h3 class="text-2xl font-bold text-amber-950 mb-2">晚餐地點已確定！</h3>
+            <p id="final-subtitle" class="text-amber-800/80 text-sm mb-6">
+                太好了！祝你擁有一個美味又放鬆的用餐時光 ✨
+            </p>
+
+            <div class="bg-amber-50/80 rounded-2xl p-5 border border-orange-100 mb-6 text-left">
+                <div class="text-xs text-orange-600 font-bold mb-1">今日確定菜單</div>
+                <div id="final-food-title" class="text-xl font-bold text-amber-950 mb-2">---</div>
+                <p id="final-food-desc" class="text-xs text-amber-800/90 leading-relaxed"></p>
+            </div>
+
+            <!-- Action Link Buttons -->
+            <div class="space-y-3">
+                <a id="final-map-link" target="_blank" href="#" class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-base rounded-xl shadow-md btn-hover-effect flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>開啟 Google 地圖搜尋附近</span>
+                </a>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="shareResult()" class="py-3 px-4 bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>分享美食卡片</span>
+                    </button>
+                    <button onclick="resetApp()" class="py-3 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                        <span>重新測驗</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Toast & Info -->
+    <footer class="w-full max-w-xl text-center py-4 text-xs text-amber-800/50 mt-auto">
+        <p>AI 暖心陪伴 • 讓每一餐都充滿期待與幸福感</p>
+    </footer>
+
+    <!-- Toast Notification Message -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-amber-950 text-amber-50 px-5 py-3 rounded-2xl shadow-xl text-xs font-medium opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2 z-50">
+        <i class="fa-solid fa-circle-info text-amber-400"></i>
+        <span id="toast-message">訊息提示</span>
+    </div>
+
+    <script>
+        /* ================= DATA MODELS & STATE ================= */
+        // Quiz Questions Data
+        const questions = [
+            {
+                id: 1,
+                question: "你的胃現在處於什麼狀態？",
+                icon: "😋",
+                options: [
+                    { key: "A", text: "餓到可以吞下整隻大象", tag: "heavy", desc: "需要爆量、滿足感極強的料理" },
+                    { key: "B", text: "嘴饞想吃點精緻好吃的", tag: "normal", desc: "美味到位，經典不敗的餐點" },
+                    { key: "C", text: "胃口一般，想吃清爽輕食", tag: "light", desc: "少負擔、溫和舒暢的選擇" },
+                    { key: "D", text: "心情有點累，極度需要療癒", tag: "comfort", desc: "暖心暖胃、罪惡感開滿的高撫慰美食" }
+                ]
+            },
+            {
+                id: 2,
+                question: "今天的預算與用餐情境？",
+                icon: "💰",
+                options: [
+                    { key: "A", text: "百元平民小吃 / 省錢質感美味", tag: "budget", desc: "CP值爆表，巷弄裡的在地靈魂" },
+                    { key: "B", text: "500 元上下，犒賞小確幸", tag: "mid", desc: "坐下來好好享受一頓優雅餐點" },
+                    { key: "C", text: "懶人模式，外送或走路 5 分鐘", tag: "convenient", desc: "便利快速，不出遠門就能享用" }
+                ]
+            },
+            {
+                id: 3,
+                question: "直覺選一個今天的「靈魂關鍵字」？",
+                icon: "✨",
+                options: [
+                    { key: "A", text: "🔥 冒汗刺激（重口味/麻辣/香濃）", tag: "spicy", desc: "喚醒味蕾，大汗淋漓的爽快" },
+                    { key: "B", text: "🍲 湯湯水水（溫熱暖胃/清甜）", tag: "soup", desc: "暖洋洋的湯頭，最撫慰人心" },
+                    { key: "C", text: "🥪 乾爽快速（漢堡/乾麵/便當）", tag: "dry", desc: "乾淨俐落，口感層次豐富" },
+                    { key: "D", text: "🎲 隨機驚喜（交給 AI 完全自由發揮）", tag: "random", desc: "敞開心胸，擁抱未知的驚喜" }
+                ]
+            }
+        ];
+
+        // Food Recommendations Database with Gentle/Humorous Persona Comments
+        const foodDatabase = [
+            // 1. Heavy / Comfort / Soup
+            {
+                id: "ramen",
+                title: "濃郁豚骨拉麵 + 溏心蛋",
+                category: "日式療癒系",
+                emoji: "🍜",
+                searchKeyword: "附近 拉麵",
+                hearts: "❤️❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡⚡",
+                bonus: "換算運動：散步 35 分鐘，但濃郁湯頭能把今天的疲憊全都融化掉！",
+                comment: "辛苦了一整天，今晚就讓熱騰騰的濃郁湯頭好好抱抱你的胃吧！舀一口湯、咬一口溏心蛋，過得開心最重要～",
+                tags: ["heavy", "comfort", "soup", "mid"]
+            },
+            // 2. Heavy / Spicy / Budget
+            {
+                id: "fried_chicken",
+                title: "酥脆大雞排 + 蒜香鹽酥雞",
+                category: "台灣經典宵夜美食",
+                emoji: "🍗",
+                searchKeyword: "附近 鹽酥雞",
+                hearts: "❤️❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡⚡⚡",
+                bonus: "換算運動：快走 40 分鐘，不過蒜香跟卡滋聲就是最棒的心靈諮商！",
+                comment: "今天過得有些辛苦對吧？別想減肥了！蒜頭撒滿、九層塔抓一把，一口咬下去胡椒香四溢，今晚煩惱通通靠邊站！",
+                tags: ["heavy", "comfort", "spicy", "budget", "convenient"]
+            },
+            // 3. Normal / Soup / Budget
+            {
+                id: "beef_noodle",
+                title: "紅燒牛肉麵 + 滷味拼盤",
+                category: "在地溫暖小吃",
+                emoji: "🍲",
+                searchKeyword: "附近 牛肉麵",
+                hearts: "❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡",
+                bonus: "換算運動：慢跑 25 分鐘，牛腱肉軟嫩入口即化，補滿滿元氣！",
+                comment: "來一碗燉得入味的軟嫩牛肉麵，配上吸滿湯汁的酸菜。溫熱的湯頭下肚，整個人都慢慢放鬆下來了呢。",
+                tags: ["normal", "soup", "budget", "heavy"]
+            },
+            // 4. Light / Dry / Convenient
+            {
+                id: "poke_bowl",
+                title: "夏威夷 Poke 玻利波利餐盒",
+                category: "清爽無負擔首選",
+                emoji: "🥗",
+                searchKeyword: "附近 健康餐盒 Poke",
+                hearts: "❤️❤️❤️❤️",
+                guilt: "⚡",
+                bonus: "換算運動：只需散步 10 分鐘，給腸胃一個舒服輕盈的休息日！",
+                comment: "感覺體內需要一點清爽的氧氣嗎？繽紛的新鮮蔬果搭配優質蛋白質，吃完精神百倍，連心情都變得好透明！",
+                tags: ["light", "dry", "convenient", "mid"]
+            },
+            // 5. Normal / Spicy / Mid
+            {
+                id: "thai_curry",
+                title: "綠咖哩椰汁雞肉飯 + 泰奶",
+                category: "異國香料風情",
+                emoji: "🍛",
+                searchKeyword: "附近 泰式料理",
+                hearts: "❤️❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡",
+                bonus: "換算運動：踩腳踏車 20 分鐘，椰香與微辣感超級開胃下飯！",
+                comment: "微辣的椰汁香氣在舌尖散開，簡直就像去了一趟泰國小旅行！生活需要一點香料點綴，今晚就好好享受這份開胃大餐吧。",
+                tags: ["normal", "spicy", "mid", "heavy"]
+            },
+            // 6. Comfort / Dry / Budget
+            {
+                id: "braised_pork",
+                title: "金黃滷肉飯 + 燙青菜 + 貢丸湯",
+                category: "台灣魂靈美食",
+                emoji: "🍚",
+                searchKeyword: "附近 滷肉飯",
+                hearts: "❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡",
+                bonus: "換算運動：散步 20 分鐘，油亮滷汁是台灣人最踏實的幸福感！",
+                comment: "有時候最簡單的美味最能撫慰人心。白飯淋上膠質滿滿的金黃滷汁，再來一口熱湯，平凡的日常就是最好的日子。",
+                tags: ["comfort", "budget", "dry", "soup"]
+            },
+            // 7. Light / Soup / Convenient
+            {
+                id: "pho",
+                title: "越式清燉牛肉河粉 + 檸檬角",
+                category: "溫柔清爽系",
+                emoji: "🍜",
+                searchKeyword: "附近 越南河粉",
+                hearts: "❤️❤️❤️❤️",
+                guilt: "⚡⚡",
+                bonus: "換算運動：散步 15 分鐘，擠上新鮮檸檬汁，清爽無負擔！",
+                comment: "擠上一滴新鮮檸檬，九層塔與清甜牛骨高湯結合得剛剛好。湯頭溫和滑順，給疲憊的胃最溫柔的照顧。",
+                tags: ["light", "soup", "convenient", "budget"]
+            },
+            // 8. Heavy / Dry / Mid
+            {
+                id: "burger",
+                title: "美式厚切起司牛肉堡 + 薯條",
+                category: "美式美夢成真",
+                emoji: "🍔",
+                searchKeyword: "附近 美式漢堡",
+                hearts: "❤️❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡⚡⚡",
+                bonus: "換算運動：跳舞 45 分鐘，肉汁爆漿的快樂，值得為它瘋狂一次！",
+                comment: "雙手抓起厚實漢堡，看著起司緩緩融化... 偶爾擺脫規則限制大口滿足，也是對生活的一種可愛反抗喔！",
+                tags: ["heavy", "dry", "mid", "comfort"]
+            },
+            // 9. Comfort / Spicy / Budget
+            {
+                id: "malatang",
+                title: "自選麻辣燙 / 小火鍋",
+                category: "暖心麻辣小確幸",
+                emoji: "🍲",
+                searchKeyword: "附近 麻辣燙",
+                hearts: "❤️❤️❤️❤️",
+                guilt: "⚡⚡⚡",
+                bonus: "換算運動：快走 25 分鐘，麻香微辣感順間驅走所有陰霾！",
+                comment: "夾上你最喜歡的蔬菜與配料，在滾熱的麻辣湯頭裡煮得香氣四溢。一點點麻、一點點辣，點亮今晚的小幸運！",
+                tags: ["comfort", "spicy", "budget", "soup"]
+            }
+        ];
+
+        // Backup 7-Eleven / Convenience Store Fallback for Limit Reached
+        const convenienceFallback = {
+            id: "convenience_store",
+            title: "超商暖心好物：熱地瓜 + 溫豆漿 / 關東煮",
+            category: "心靈休息站",
+            emoji: "🍠",
+            searchKeyword: "附近 超商",
+            hearts: "❤️❤️❤️❤️❤️ (滿滿貼心)",
+            guilt: "⚡ (完全無負擔)",
+            bonus: "換算運動：散步 5 分鐘去巷口，今晚請務必早點休息！",
+            comment: "看來你今天胃口很挑，其實是心有點累了對吧？沒關係的～不如去巷口超商買個暖呼呼的蒸地瓜配溫豆漿，簡單、無負擔又溫暖。今晚不逼自己做決定，好好睡一覺吧 ❤️",
+            tags: ["fallback"]
+        };
+
+        /* ================= APP STATE ================= */
+        let currentStep = 0;
+        let userAnswers = {};
+        let rejectionCount = 0;
+        let currentRecommendedList = [];
+        let currentActiveFood = null;
+
+        /* ================= EVENT LISTENERS & LIFECYCLE ================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log("Warm AI Food Companion App Initialized.");
+        });
+
+        /* ================= NAVIGATION FUNCTIONS ================= */
+        function startQuiz() {
+            currentStep = 0;
+            userAnswers = {};
+            rejectionCount = 0;
+            currentRecommendedList = [];
+            
+            showScreen('screen-quiz');
+            renderQuestion();
+        }
+
+        function resetApp() {
+            currentStep = 0;
+            userAnswers = {};
+            rejectionCount = 0;
+            currentRecommendedList = [];
+            currentActiveFood = null;
+
+            document.getElementById('badge-status').classList.add('hidden');
+            document.getElementById('badge-status').classList.remove('flex');
+            showScreen('screen-landing');
+        }
+
+        function showScreen(screenId) {
+            const screens = ['screen-landing', 'screen-quiz', 'screen-loading', 'screen-result', 'screen-final'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('fade-enter-active');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            // Status badge logic
+            const badge = document.getElementById('badge-status');
+            if (screenId === 'screen-quiz' || screenId === 'screen-loading' || screenId === 'screen-result') {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else if (screenId === 'screen-landing' || screenId === 'screen-final') {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ================= QUIZ LOGIC ================= */
+        function renderQuestion() {
+            const q = questions[currentStep];
+            
+            // Update progress
+            const progressPct = Math.round(((currentStep + 1) / questions.length) * 100);
+            document.getElementById('quiz-progress-text').innerText = `問題 ${currentStep + 1} / ${questions.length}`;
+            document.getElementById('quiz-progress-percent').innerText = `${progressPct}%`;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
+
+            // Update question content
+            document.getElementById('quiz-icon').innerText = q.icon;
+            document.getElementById('quiz-question').innerText = q.question;
+
+            // Hide/Show prev button
+            const prevBtn = document.getElementById('quiz-prev-btn');
+            if (currentStep === 0) {
+                prevBtn.classList.add('opacity-0', 'pointer-events-none');
+            } else {
+                prevBtn.classList.remove('opacity-0', 'pointer-events-none');
+            }
+
+            // Render option buttons
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full p-4 rounded-2xl border-2 border-orange-100 bg-white text-left flex items-start gap-3 text-amber-950 font-medium card-shadow";
+                btn.onclick = () => selectOption(q.id, opt);
+
+                btn.innerHTML = `
+                    <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-600 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                        ${opt.key}
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-bold text-sm md:text-base text-amber-950 mb-0.5">${opt.text}</div>
+                        <div class="text-xs text-amber-800/70 font-normal">${opt.desc}</div>
+                    </div>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(questionId, option) {
+            userAnswers[questionId] = option;
+
+            if (currentStep < questions.length - 1) {
+                currentStep++;
+                renderQuestion();
+            } else {
+                // Quiz completed -> Go to Loading & AI analysis
+                processAIRecommendation();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentStep > 0) {
+                currentStep--;
+                renderQuestion();
+            }
+        }
+
+        /* ================= AI RECOMMENDATION ENGINE ================= */
+        function processAIRecommendation() {
+            showScreen('screen-loading');
+
+            const loadingSubtext = document.getElementById('loading-subtext');
+            const messages = [
+                "正在計算今日份的幸福感數據...",
+                "正在微調溫柔美食調配比例...",
+                "正在搜尋附近能治癒胃口的美食..."
+            ];
+
+            let msgIndex = 0;
+            const interval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % messages.length;
+                loadingSubtext.innerText = messages[msgIndex];
+            }, 500);
+
+            // Filter & score food items based on tags
+            setTimeout(() => {
+                clearInterval(interval);
+                calculateScoresAndRank();
+                displayCurrentRecommendation();
+            }, 1600);
+        }
+
+        function calculateScoresAndRank() {
+            const chosenTags = Object.values(userAnswers).map(a => a.tag);
+
+            // Score each food item in database
+            const scoredList = foodDatabase.map(food => {
+                let score = 0;
+                chosenTags.forEach(tag => {
+                    if (food.tags.includes(tag)) {
+                        score += 3;
+                    }
+                });
+                // Add slight random jitter for variety
+                score += Math.random() * 1.5;
+                return { ...food, score };
+            });
+
+            // Sort descending
+            scoredList.sort((a, b) => b.score - a.score);
+            currentRecommendedList = scoredList;
+            rejectionCount = 0;
+        }
+
+        function displayCurrentRecommendation() {
+            showScreen('screen-result');
+
+            let food;
+            const tagBadge = document.getElementById('result-tag');
+            const retryBtnText = document.getElementById('retry-btn-text');
+
+            if (rejectionCount === 0) {
+                food = currentRecommendedList[0];
+                tagBadge.innerText = "第 1 順位首選";
+                tagBadge.className = "px-3 py-1 bg-amber-100 text-amber-900 font-bold text-xs rounded-full";
+                retryBtnText.innerText = "有點猶豫，換個口味";
+            } else if (rejectionCount === 1) {
+                food = currentRecommendedList[1] || currentRecommendedList[0];
+                tagBadge.innerText = "暖心備用選項 ✨";
+                tagBadge.className = "px-3 py-1 bg-orange-100 text-orange-900 font-bold text-xs rounded-full";
+                retryBtnText.innerText = "還有別的嗎？再換一個";
+            } else if (rejectionCount === 2) {
+                food = currentRecommendedList[2] || currentRecommendedList[0];
+                tagBadge.innerText = "精選驚喜口袋名單 🎁";
+                tagBadge.className = "px-3 py-1 bg-rose-100 text-rose-900 font-bold text-xs rounded-full";
+                retryBtnText.innerText = "感覺都不太對，怎麼辦？";
+            } else {
+                // Limit reached: Fallback to convenience store
+                food = convenienceFallback;
+                tagBadge.innerText = "AI 終極心靈療癒寶盒 ❤️";
+                tagBadge.className = "px-3 py-1 bg-emerald-100 text-emerald-900 font-bold text-xs rounded-full";
+                retryBtnText.innerText = "我接受！今晚就去超商";
+            }
+
+            currentActiveFood = food;
+
+            // Fill card views
+            document.getElementById('food-category').innerText = food.category;
+            document.getElementById('food-title').innerText = food.title;
+            document.getElementById('food-emoji').innerText = food.emoji;
+            document.getElementById('food-comment').innerText = `「${food.comment}」`;
+            document.getElementById('food-heart-rating').innerText = food.hearts;
+            document.getElementById('food-guilt-rating').innerText = food.guilt;
+            document.getElementById('food-bonus-text').innerText = food.bonus;
+        }
+
+        /* ================= ACCEPT & REJECT HANDLERS ================= */
+        function acceptRecommendation() {
+            showScreen('screen-final');
+
+            document.getElementById('final-food-title').innerText = currentActiveFood.title;
+            document.getElementById('final-food-desc').innerText = currentActiveFood.comment;
+
+            // Set map search URL
+            const mapQuery = encodeURIComponent(currentActiveFood.searchKeyword || "附近 美食");
+            const mapUrl = `https://www.google.com/maps/search/${mapQuery}`;
+            document.getElementById('final-map-link').href = mapUrl;
+
+            // Custom toast
+            showToast("🎉 太棒了！願你享受美味愉快的一餐！");
+        }
+
+        function rejectRecommendation() {
+            rejectionCount++;
+
+            if (rejectionCount === 1) {
+                showToast("沒關係～挑選美食也是一種享受，那我們換個風格！");
+            } else if (rejectionCount === 2) {
+                showToast("看來今天胃口很挑惕呢！這是精心為你準備的備用名單～");
+            } else if (rejectionCount >= 3) {
+                showToast("看來你今天需要的其實是心靈的休息～❤️");
+            }
+
+            // Short transition effect
+            showScreen('screen-loading');
+            document.getElementById('loading-subtext').innerText = "AI 正在溫柔重新調整菜單...";
+            
+            setTimeout(() => {
+                displayCurrentRecommendation();
+            }, 800);
+        }
+
+        /* ================= UTILITY & SHARING ================= */
+        function shareResult() {
+            if (!currentActiveFood) return;
+
+            const shareText = `【AI 暖心美食指南】\nAI 今天推薦我吃：${currentActiveFood.title}！\n「${currentActiveFood.comment}」\n快來試試 AI 幫你決定今天吃什麼！`;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showToast("📋 美食卡片內容已複製到剪貼簿，可直接貼上分享！");
+                }).catch(() => {
+                    fallbackCopyText(shareText);
+                });
+            } else {
+                fallbackCopyText(shareText);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("📋 已成功複製分享文案！");
+            } catch (err) {
+                showToast("無法自動複製，歡迎截圖分享給朋友喔！");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            
+            toastMsg.innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
